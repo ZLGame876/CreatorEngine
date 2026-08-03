@@ -9,17 +9,22 @@
                 "-fansi-escape-codes",
                 "-g",
                 "-I/opt/homebrew/include",
+                "-I${workspaceFolder}/engine/source",
+                "-I${workspaceFolder}/source",
+                "source/main.cpp",
+                "source/Game.cpp",
+                "engine/source/Application.cpp",
+                "engine/source/CreatorEngine.cpp",
                 "-L/opt/homebrew/lib",
                 "-lglfw",
                 "-lGLEW",
                 "-framework",
                 "OpenGL",
-                "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${workspaceFolder}/main"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"

@@ -43,9 +43,9 @@ Single-file C++ OpenGL engine (GLFW + GLEW, OpenGL 3.3 core context). No CMake, 
 
 ## Structure
 
-- `Source/main.cpp` — main entry; GLFW window (auto-sized to 80% of primary monitor, centered), 3.3 core context, GLEW init, shader compile/link, triangle render loop.
-- `Engine/` — engine framework source (`.h`/`.cpp` files being built out; CMakeLists.txt placeholder, no CMake build yet).
-- `.vscode/build.bat` — Windows build script (Windows branch only); compiles `Source/main.cpp` into `Bin/`.
+- `source/main.cpp` — main entry; GLFW window (auto-sized to 80% of primary monitor, centered), 3.3 core context, GLEW init, shader compile/link, triangle render loop. Uses `Eng::CreatorEngine` framework via `source/Game.cpp` + `engine/source/eng.h`.
+- `engine/` — engine framework source (`.h`/`.cpp` files being built out; CMakeLists.txt placeholder, no CMake build yet).
+- `.vscode/build.bat` — Windows build script (Windows branch only); compiles `source/main.cpp` into `Bin/`.
 - `.vscode/launch.json` — Windows F5 debug config (Windows branch only); runs `Bin/main.exe` in an external console.
 - `.vscode/tasks.json`, `.vscode/c_cpp_properties.json` — platform-specific.
 - `ThirdParty/` — vendored dependencies (include/, lib/, bin/), copied from vcpkg artifacts; refresh via vcpkg.
