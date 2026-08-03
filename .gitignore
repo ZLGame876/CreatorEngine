@@ -1,5 +1,9 @@
 # Build outputs
 Bin/
+main
+main.dSYM/
+source/main
+source/main.dSYM/
 *.obj
 *.pdb
 *.ilk
