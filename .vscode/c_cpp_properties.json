@@ -1,19 +1,25 @@
 {
     "configurations": [
         {
-            "name": "Mac",
+            "name": "Win64",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/opt/homebrew/include"
+                "${workspaceFolder}/ThirdParty/include",
+                "D:/VisualStudio2026/VC/Tools/MSVC/14.51.36231/include",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/ucrt",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/um",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/shared"
             ],
-            "defines": [],
-            "macFrameworkPath": [
-                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "GLFW_DLL"
             ],
-            "compilerPath": "/usr/bin/clang++",
+            "compilerPath": "D:/VisualStudio2026/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "macos-clang-arm64"
+            "intelliSenseMode": "windows-msvc-x64"
         }
     ],
     "version": 4

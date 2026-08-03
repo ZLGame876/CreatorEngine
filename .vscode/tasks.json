@@ -1,34 +1,54 @@
 {
     "tasks": [
         {
-            "type": "cppbuild",
-            "label": "C/C++: clang 生成活动文件",
-            "command": "/usr/bin/clang++",
+            "type": "shell",
+            "label": "C/C++: cl 生成活动文件 (build.bat)",
+            "command": "${workspaceFolder}\\.vscode\\build.bat",
             "args": [
-                "-fcolor-diagnostics",
-                "-fansi-escape-codes",
-                "-g",
-                "-I/opt/homebrew/include",
-                "-L/opt/homebrew/lib",
-                "-lglfw",
-                "-lGLEW",
-                "-framework",
-                "OpenGL",
-                "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${file}"
             ],
             "options": {
                 "cwd": "${fileDirname}"
             },
             "problemMatcher": [
-                "$gcc"
+                "$msCompile"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "调试器生成的任务。"
+            "detail": "通过 build.bat 使用 MSVC + vcpkg 编译"
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: cl.exe 生成活动文件",
+            "command": "cl.exe",
+            "args": [
+                "/nologo",
+                "/EHsc",
+                "/std:c++17",
+                "/utf-8",
+                "/Zi",
+                "/I\"${workspaceFolder}\\ThirdParty\\include\"",
+                "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "${file}",
+                "/link",
+                "/LIBPATH:\"${workspaceFolder}\\ThirdParty\\lib\"",
+                "glew32.lib",
+                "glfw3dll.lib",
+                "opengl32.lib"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "C/C++ 扩展自动生成的任务（已修复，包含 vcpkg 路径）"
         }
     ],
     "version": "2.0.0"
