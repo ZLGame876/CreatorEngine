@@ -1,3 +1,6 @@
 # Build outputs
 main
 main.dSYM/
+build/
+.cache/
+.vscode/run.command

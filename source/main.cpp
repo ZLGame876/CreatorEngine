@@ -5,7 +5,7 @@
 int main()
 {
     Game* game = new Game();
-    Eng::CreatorEngine engine;
+    eng::CreatorEngine& engine = eng::CreatorEngine::GetInstance();
     engine.SetApplication(game);
 
     if(engine.Init())

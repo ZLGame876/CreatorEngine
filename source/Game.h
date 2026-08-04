@@ -1,7 +1,7 @@
 #pragma once
 #include <eng.h>
 
-class Game : public Eng::Application
+class Game : public eng::Application
 {
     public:
         virtual bool Init() override;
