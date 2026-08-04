@@ -1,0 +1,38 @@
+[
+{
+  "directory": "/Users/z.l.game/Desktop/CreatorEngine/build",
+  "command": "/usr/bin/clang++ -I/Users/z.l.game/Desktop/CreatorEngine/source -I/Users/z.l.game/Desktop/CreatorEngine/engine/source -isystem /opt/homebrew/include -iframework /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks -g -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks  -o CMakeFiles/CreatorEngine.dir/source/main.cpp.o -c /Users/z.l.game/Desktop/CreatorEngine/source/main.cpp",
+  "file": "/Users/z.l.game/Desktop/CreatorEngine/source/main.cpp",
+  "output": "/Users/z.l.game/Desktop/CreatorEngine/build/CMakeFiles/CreatorEngine.dir/source/main.cpp.o"
+},
+{
+  "directory": "/Users/z.l.game/Desktop/CreatorEngine/build",
+  "command": "/usr/bin/clang++ -I/Users/z.l.game/Desktop/CreatorEngine/source -I/Users/z.l.game/Desktop/CreatorEngine/engine/source -isystem /opt/homebrew/include -iframework /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks -g -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks  -o CMakeFiles/CreatorEngine.dir/source/Game.cpp.o -c /Users/z.l.game/Desktop/CreatorEngine/source/Game.cpp",
+  "file": "/Users/z.l.game/Desktop/CreatorEngine/source/Game.cpp",
+  "output": "/Users/z.l.game/Desktop/CreatorEngine/build/CMakeFiles/CreatorEngine.dir/source/Game.cpp.o"
+},
+{
+  "directory": "/Users/z.l.game/Desktop/CreatorEngine/build",
+  "command": "/usr/bin/clang++ -I/Users/z.l.game/Desktop/CreatorEngine/engine/source -isystem /opt/homebrew/include -g -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks  -o Engine_build/CMakeFiles/Engine.dir/source/Application.cpp.o -c /Users/z.l.game/Desktop/CreatorEngine/engine/source/Application.cpp",
+  "file": "/Users/z.l.game/Desktop/CreatorEngine/engine/source/Application.cpp",
+  "output": "/Users/z.l.game/Desktop/CreatorEngine/build/Engine_build/CMakeFiles/Engine.dir/source/Application.cpp.o"
+},
+{
+  "directory": "/Users/z.l.game/Desktop/CreatorEngine/build",
+  "command": "/usr/bin/clang++ -I/Users/z.l.game/Desktop/CreatorEngine/engine/source -isystem /opt/homebrew/include -g -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks  -o Engine_build/CMakeFiles/Engine.dir/source/CreatorEngine.cpp.o -c /Users/z.l.game/Desktop/CreatorEngine/engine/source/CreatorEngine.cpp",
+  "file": "/Users/z.l.game/Desktop/CreatorEngine/engine/source/CreatorEngine.cpp",
+  "output": "/Users/z.l.game/Desktop/CreatorEngine/build/Engine_build/CMakeFiles/Engine.dir/source/CreatorEngine.cpp.o"
+},
+{
+  "directory": "/Users/z.l.game/Desktop/CreatorEngine/build",
+  "command": "/usr/bin/clang++ -I/Users/z.l.game/Desktop/CreatorEngine/engine/source -isystem /opt/homebrew/include -g -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks  -o Engine_build/CMakeFiles/Engine.dir/source/input/InputManager.cpp.o -c /Users/z.l.game/Desktop/CreatorEngine/engine/source/input/InputManager.cpp",
+  "file": "/Users/z.l.game/Desktop/CreatorEngine/engine/source/input/InputManager.cpp",
+  "output": "/Users/z.l.game/Desktop/CreatorEngine/build/Engine_build/CMakeFiles/Engine.dir/source/input/InputManager.cpp.o"
+},
+{
+  "directory": "/Users/z.l.game/Desktop/CreatorEngine/build",
+  "command": "/usr/bin/clang++ -I/Users/z.l.game/Desktop/CreatorEngine/engine/source -isystem /opt/homebrew/include -g -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks  -o Engine_build/CMakeFiles/Engine.dir/source/graphics/shaderprogram.cpp.o -c /Users/z.l.game/Desktop/CreatorEngine/engine/source/graphics/shaderprogram.cpp",
+  "file": "/Users/z.l.game/Desktop/CreatorEngine/engine/source/graphics/shaderprogram.cpp",
+  "output": "/Users/z.l.game/Desktop/CreatorEngine/build/Engine_build/CMakeFiles/Engine.dir/source/graphics/shaderprogram.cpp.o"
+}
+]

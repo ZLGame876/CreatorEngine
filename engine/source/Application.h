@@ -2,7 +2,7 @@
 
 
 
-namespace Eng
+namespace eng
 {
     class Application
     {
