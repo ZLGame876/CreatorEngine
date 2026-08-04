@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/Users/z.l.game/Desktop/CreatorEngine/build/cmake_install.cmake",
-		"/Users/z.l.game/Desktop/CreatorEngine/build/Engine_build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

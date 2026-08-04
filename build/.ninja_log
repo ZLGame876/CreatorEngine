@@ -1,9 +1,0 @@
-# ninja log v7
-2	114	1785838551567161348	Engine_build/CMakeFiles/Engine.dir/source/Application.cpp.o	dba5034828b57551
-4	588	1785838551568452192	Engine_build/CMakeFiles/Engine.dir/source/input/InputManager.cpp.o	ce12d5211e571173
-6	640	1785840856112787502	Engine_build/CMakeFiles/Engine.dir/source/graphics/shaderprogram.cpp.o	8044b4a9504fb06e
-7	740	1785840856113240131	CMakeFiles/CreatorEngine.dir/source/main.cpp.o	5cf4e79a3040b0b3
-7	805	1785840856113460425	CMakeFiles/CreatorEngine.dir/source/Game.cpp.o	245877531a77850b
-4	948	1785838551567968813	Engine_build/CMakeFiles/Engine.dir/source/CreatorEngine.cpp.o	e9fc7a4943c6808c
-640	827	1785840856746429340	Engine_build/libEngine.a	1be972bcd7b9cdd7
-827	904	1785840856933242176	Bin/CreatorEngine	1eb71893fd61e9d9

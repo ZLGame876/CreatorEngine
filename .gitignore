@@ -4,6 +4,8 @@ main
 main.dSYM/
 source/main
 source/main.dSYM/
+build/
+.cache/
 *.obj
 *.pdb
 *.ilk
