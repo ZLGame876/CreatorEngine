@@ -6,6 +6,8 @@ source/main
 source/main.dSYM/
 build/
 .cache/
+ThirdParty/imgui.zip
+imgui.ini
 *.obj
 *.pdb
 *.ilk
