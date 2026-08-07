@@ -13,7 +13,7 @@ add_executable(${PROJECT_NAME}
 
 add_subdirectory(engine "${CMAKE_CURRENT_BINARY_DIR}/Engine_build")
 
-target_include_directories(${PROJECT_NAME} PRIVATE source)
+target_include_directories(${PROJECT_NAME} PRIVATE source ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty)
 
 if(APPLE)
     find_package(glfw3 REQUIRED)

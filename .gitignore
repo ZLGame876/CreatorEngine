@@ -3,4 +3,6 @@ main
 main.dSYM/
 build/
 .cache/
+ThirdParty/imgui.zip
+imgui.ini
 .vscode/run.command
