@@ -33,8 +33,10 @@ namespace eng
         // 清空所有根对象
         void Clear();
 
-        // 获取所有根对象
-        const std::vector<std::unique_ptr<GameObject>>& GetRootGameObjects() const { return m_RootGameObjects; }
+        // Scene 统一拥有全部对象，层级关系由 Transform 表达。
+        const std::vector<std::unique_ptr<GameObject>>& GetGameObjects() const { return m_GameObjects; }
+        std::vector<GameObject*> GetRootGameObjects() const;
+        bool Contains(const GameObject* go) const;
 
         // 更新所有 GameObject
         void Update(float deltaTime);
@@ -44,7 +46,7 @@ namespace eng
 
     private:
         std::string m_Name;
-        std::vector<std::unique_ptr<GameObject>> m_RootGameObjects;
+        std::vector<std::unique_ptr<GameObject>> m_GameObjects;
         std::unique_ptr<PhysicsWorld> m_PhysicsWorld;
     };
 }

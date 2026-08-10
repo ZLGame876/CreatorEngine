@@ -36,5 +36,6 @@ namespace eng
 
     private:
         GameObject* m_GameObject = nullptr;
+        bool m_HasStarted = false;
     };
 }

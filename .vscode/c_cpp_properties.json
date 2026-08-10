@@ -1,10 +1,11 @@
-{
+﻿{
     "configurations": [
         {
             "name": "Win64",
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/ThirdParty/include",
+                "${workspaceFolder}/engine/source",
                 "D:/VisualStudio2026/VC/Tools/MSVC/14.51.36231/include",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/ucrt",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/um",
@@ -14,6 +15,7 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
+                "WIN32_LEAN_AND_MEAN",
                 "GLFW_DLL"
             ],
             "compilerPath": "D:/VisualStudio2026/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/cl.exe",

@@ -8,14 +8,18 @@
 // 核心
 #include "core/Object.h"
 #include "core/Component.h"
+#include "core/ProjectPaths.h"
 #include "core/Transform.h"
 #include "core/GameObject.h"
 #include "core/Scene.h"
 #include "core/Script.h"
 #include "core/SceneSerializer.h"
+#include "scripting/MonoRuntime.h"
+#include "scripting/CSharpScript.h"
 
 // 2D 渲染
 #include "graphics/Texture.h"
+#include "graphics/Framebuffer.h"
 #include "graphics/SpriteRenderer.h"
 #include "graphics/SpriteBatch.h"
 #include "graphics/Camera.h"

@@ -1,7 +1,13 @@
 #include "core/GameObject.h"
+#include "core/Scene.h"
 #include "core/Script.h"
 #include "graphics/SpriteRenderer.h"
 #include "graphics/Camera.h"
+#include "physics/Rigidbody2D.h"
+#include "physics/BoxCollider2D.h"
+#include "physics/CircleCollider2D.h"
+#include "scripting/CSharpScript.h"
+#include <algorithm>
 #include <iostream>
 
 namespace eng
@@ -35,12 +41,48 @@ namespace eng
         return parentTrans ? parentTrans->GetGameObject() : nullptr;
     }
 
+    bool GameObject::SetParent(GameObject* parent, bool worldPositionStays)
+    {
+        if (parent && parent->GetScene() != m_Scene)
+        {
+            return false;
+        }
+        return m_Transform->SetParent(parent ? parent->GetTransform() : nullptr,
+                                      worldPositionStays);
+    }
+
+    bool GameObject::RemoveComponent(Component* component)
+    {
+        if (!component || component == m_Transform)
+        {
+            return false;
+        }
+
+        const auto it = std::find_if(m_Components.begin(), m_Components.end(),
+            [component](const std::unique_ptr<Component>& item) {
+                return item.get() == component;
+            });
+        if (it == m_Components.end())
+        {
+            return false;
+        }
+
+        (*it)->OnDestroy();
+        m_Components.erase(it);
+        return true;
+    }
+
     void GameObject::Update(float deltaTime)
     {
         if (!IsActive()) return;
 
         for (auto& comp : m_Components)
         {
+            if (!comp->m_HasStarted)
+            {
+                comp->Start();
+                comp->m_HasStarted = true;
+            }
             comp->Update(deltaTime);
         }
     }
@@ -78,13 +120,34 @@ namespace eng
             json["components"].push_back(compJson);
         }
 
+        json["children"] = nlohmann::json::array();
+        for (Transform* child : m_Transform->GetChildren())
+        {
+            if (child && child->GetGameObject())
+            {
+                json["children"].push_back(child->GetGameObject()->Serialize());
+            }
+        }
+
         return json;
     }
 
-    std::unique_ptr<GameObject> GameObject::Deserialize(const nlohmann::json& json)
+    GameObject* GameObject::Deserialize(Scene& scene, const nlohmann::json& json,
+                                        GameObject* parent)
     {
         std::string name = json.value("name", "GameObject");
-        auto go = std::make_unique<GameObject>(name);
+        GameObject* go = scene.CreateGameObject(name);
+        if (!go)
+        {
+            return nullptr;
+        }
+
+        if (parent && !go->SetParent(parent, false))
+        {
+            scene.DestroyGameObject(go);
+            return nullptr;
+        }
+
         go->SetActive(json.value("active", true));
 
         // 反序列化 Transform
@@ -110,16 +173,7 @@ namespace eng
                     auto* sr = go->AddComponent<SpriteRenderer>();
                     if (compJson.contains("data"))
                     {
-                        auto& data = compJson["data"];
-                        if (data.contains("color"))
-                            sr->SetColor(data["color"][0].get<float>(), data["color"][1].get<float>(),
-                                        data["color"][2].get<float>(), data["color"][3].get<float>());
-                        if (data.contains("size"))
-                            sr->SetSize(data["size"][0].get<float>(), data["size"][1].get<float>());
-                        if (data.contains("layer"))
-                            sr->SetLayer(data["layer"].get<int>());
-                        if (data.contains("orderInLayer"))
-                            sr->SetOrderInLayer(data["orderInLayer"].get<int>());
+                        sr->Deserialize(compJson["data"]);
                     }
                 }
                 else if (type == "Camera")
@@ -127,15 +181,28 @@ namespace eng
                     auto* cam = go->AddComponent<Camera>();
                     if (compJson.contains("data"))
                     {
-                        auto& data = compJson["data"];
-                        if (data.contains("projectionType"))
-                        {
-                            if (data["projectionType"].get<int>() == 0)
-                                cam->SetOrthographic(data.value("orthoSize", 5.0f));
-                            else
-                                cam->SetPerspective(data.value("fov", 60.0f));
-                        }
+                        cam->Deserialize(compJson["data"]);
                     }
+                }
+                else if (type == "Rigidbody2D")
+                {
+                    auto* component = go->AddComponent<Rigidbody2D>();
+                    if (compJson.contains("data")) component->Deserialize(compJson["data"]);
+                }
+                else if (type == "BoxCollider2D")
+                {
+                    auto* component = go->AddComponent<BoxCollider2D>();
+                    if (compJson.contains("data")) component->Deserialize(compJson["data"]);
+                }
+                else if (type == "CircleCollider2D")
+                {
+                    auto* component = go->AddComponent<CircleCollider2D>();
+                    if (compJson.contains("data")) component->Deserialize(compJson["data"]);
+                }
+                else if (type == "CSharpScript")
+                {
+                    auto* component = go->AddComponent<CSharpScript>();
+                    if (compJson.contains("data")) component->Deserialize(compJson["data"]);
                 }
                 else if (type == "Script")
                 {
@@ -150,11 +217,21 @@ namespace eng
                                 script->Deserialize(compJson["data"]);
                             }
                             // 手动添加脚本组件（绕过 AddComponent 的 Awake）
-                            script->m_GameObject = go.get();
+                            script->m_GameObject = go;
+                            Script* scriptPtr = script.get();
                             go->m_Components.push_back(std::unique_ptr<Component>(script.release()));
+                            scriptPtr->Awake();
                         }
                     }
                 }
+            }
+        }
+
+        if (json.contains("children") && json["children"].is_array())
+        {
+            for (const auto& childJson : json["children"])
+            {
+                Deserialize(scene, childJson, go);
             }
         }
 

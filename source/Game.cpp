@@ -1,255 +1,305 @@
 #include "Game.h"
-#include "GLFW/glfw3.h"
-#include "GL/glew.h"
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <algorithm>
 #include <iostream>
-#include <glm/gtc/matrix_transform.hpp>
 
 bool Game::Init()
 {
-    m_Scene = std::make_unique<eng::Scene>("TestScene");
+    m_Scene = std::make_unique<eng::Scene>("Sample Scene");
 
     GLFWwindow* window = glfwGetCurrentContext();
     glfwGetFramebufferSize(window, &m_WindowWidth, &m_WindowHeight);
 
-    // ====== 初始化编辑器 ======
     if (!m_Editor.Init(window))
     {
-        std::cerr << "编辑器初始化失败" << std::endl;
+        std::cerr << "Failed to initialize editor" << std::endl;
         return false;
     }
 
-    // ====== 创建 GameView 帧缓冲 ======
-    m_GameViewWidth = m_WindowWidth / 2;
-    m_GameViewHeight = m_WindowHeight / 2;
-    glGenFramebuffers(1, &m_GameViewFramebuffer);
-    glGenTextures(1, &m_GameViewTexture);
-    glBindTexture(GL_TEXTURE_2D, m_GameViewTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_GameViewWidth, m_GameViewHeight,
-                 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_GameViewFramebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_GameViewTexture, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    const int initialViewWidth = std::max(1, m_WindowWidth / 2);
+    const int initialViewHeight = std::max(1, m_WindowHeight / 2);
+    if (!m_SceneFramebuffer.Create(initialViewWidth, initialViewHeight, true) ||
+        !m_GameFramebuffer.Create(initialViewWidth, initialViewHeight, true))
+    {
+        std::cerr << "Failed to create editor framebuffers" << std::endl;
+        return false;
+    }
 
-    // ====== 创建相机 ======
-    m_CameraGO = m_Scene->CreateGameObject("MainCamera");
-    m_Camera = m_CameraGO->AddComponent<eng::Camera>();
-    m_Camera->SetOrthographic(m_GameViewHeight * 0.5f);
-    m_CameraGO->GetTransform()->SetPosition(m_GameViewWidth * 0.5f, m_GameViewHeight * 0.5f, 10.0f);
+    m_CameraObject = m_Scene->CreateGameObject("Main Camera");
+    eng::Camera* camera = m_CameraObject->AddComponent<eng::Camera>();
+    camera->SetOrthographic(m_WindowHeight * 0.5f);
+    m_CameraObject->GetTransform()->SetPosition(m_WindowWidth * 0.5f,
+                                                m_WindowHeight * 0.5f, 10.0f);
+    m_Editor.SetSceneView2DFrame(glm::vec2(m_WindowWidth * 0.5f,
+                                           m_WindowHeight * 0.5f),
+                                 m_WindowHeight * 0.5f);
 
-    std::cout << "=== 相机系统 ===" << std::endl;
-    std::cout << "正交相机: size=" << m_Camera->GetOrthoSize()
-              << " pos=(" << m_CameraGO->GetTransform()->GetPosition().x
-              << "," << m_CameraGO->GetTransform()->GetPosition().y << ")" << std::endl;
-
-    // ====== 加载着色器 ======
     if (!m_SpriteShader.LoadFromFiles("source/shaders/sprite.vert",
-                                      "source/shaders/sprite.frag"))
+                                      "source/shaders/sprite.frag") ||
+        !m_Grid2DShader.LoadFromFiles("source/shaders/grid2d.vert",
+                                      "source/shaders/grid2d.frag") ||
+        !m_Grid3DShader.LoadFromFiles("source/shaders/infinite_grid.vert",
+                                      "source/shaders/infinite_grid.frag"))
     {
-        std::cerr << "精灵着色器加载失败" << std::endl;
+        std::cerr << "Failed to load editor shaders" << std::endl;
         return false;
     }
 
-    if (!m_GridShader.LoadFromFiles("source/shaders/grid2d.vert",
-                                    "source/shaders/grid2d.frag"))
-    {
-        std::cerr << "网格着色器加载失败" << std::endl;
-        return false;
-    }
-
-    // ====== 初始化 SpriteBatch ======
     if (!m_SpriteBatch.Init())
     {
-        std::cerr << "SpriteBatch 初始化失败" << std::endl;
+        std::cerr << "Failed to initialize SpriteBatch" << std::endl;
         return false;
     }
     m_SpriteBatch.SetShader(&m_SpriteShader);
 
-    // ====== 创建网格大平面 ======
     SetupGridQuad();
-
-    // ====== 创建测试纹理 ======
+    SetupFullscreenQuad();
     CreateCheckerTexture();
 
-    // ====== 创建精灵 ======
-    auto* center = m_Scene->CreateGameObject("CenterSquare");
-    auto* centerSR = center->AddComponent<eng::SpriteRenderer>();
-    centerSR->SetTexture(&m_TestTexture);
-    centerSR->SetSize(200.0f, 200.0f);
-    centerSR->SetColor(1.0f, 0.3f, 0.3f, 1.0f);
-    center->GetTransform()->SetPosition(m_GameViewWidth / 2.0f, m_GameViewHeight / 2.0f, 0.0f);
+    auto* center = m_Scene->CreateGameObject("Center Square");
+    auto* centerRenderer = center->AddComponent<eng::SpriteRenderer>();
+    centerRenderer->SetTexture(&m_TestTexture);
+    centerRenderer->SetSize(200.0f, 200.0f);
+    centerRenderer->SetColor(0.95f, 0.32f, 0.28f, 1.0f);
+    center->GetTransform()->SetPosition(m_WindowWidth * 0.5f, m_WindowHeight * 0.5f, 0.0f);
 
-    auto* topLeft = m_Scene->CreateGameObject("TopLeft");
-    auto* tlSR = topLeft->AddComponent<eng::SpriteRenderer>();
-    tlSR->SetTexture(&m_TestTexture);
-    tlSR->SetSize(100.0f, 100.0f);
-    tlSR->SetColor(0.3f, 1.0f, 0.3f, 1.0f);
-    topLeft->GetTransform()->SetPosition(150.0f, m_GameViewHeight - 150.0f, 0.0f);
+    auto* group = m_Scene->CreateGameObject("Demo Group");
+    group->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
 
-    auto* bottomRight = m_Scene->CreateGameObject("BottomRight");
-    auto* brSR = bottomRight->AddComponent<eng::SpriteRenderer>();
-    brSR->SetTexture(&m_TestTexture);
-    brSR->SetSize(120.0f, 120.0f);
-    brSR->SetColor(0.3f, 0.3f, 1.0f, 1.0f);
-    bottomRight->GetTransform()->SetPosition(m_GameViewWidth - 150.0f, 150.0f, 0.0f);
+    auto* topLeft = m_Scene->CreateGameObject("Top Left");
+    topLeft->SetParent(group, false);
+    auto* topLeftRenderer = topLeft->AddComponent<eng::SpriteRenderer>();
+    topLeftRenderer->SetTexture(&m_TestTexture);
+    topLeftRenderer->SetSize(100.0f, 100.0f);
+    topLeftRenderer->SetColor(0.28f, 0.78f, 0.48f, 1.0f);
+    topLeft->GetTransform()->SetPosition(150.0f, m_WindowHeight - 150.0f, 0.0f);
 
-    std::cout << "创建了 3 个精灵" << std::endl;
-    std::cout << "=======================" << std::endl;
+    auto* bottomRight = m_Scene->CreateGameObject("Bottom Right");
+    bottomRight->SetParent(group, false);
+    auto* bottomRightRenderer = bottomRight->AddComponent<eng::SpriteRenderer>();
+    bottomRightRenderer->SetTexture(&m_TestTexture);
+    bottomRightRenderer->SetSize(120.0f, 120.0f);
+    bottomRightRenderer->SetColor(0.24f, 0.50f, 0.92f, 1.0f);
+    bottomRight->GetTransform()->SetPosition(m_WindowWidth - 150.0f, 150.0f, 0.0f);
 
-    glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
+    glClearColor(0.105f, 0.110f, 0.120f, 1.0f);
     return true;
 }
 
 void Game::SetupGridQuad()
 {
-    const float SIZE = 20000.0f;
-    float vertices[] = {
-        -SIZE, -SIZE, 0.0f,
-         SIZE, -SIZE, 0.0f,
-        -SIZE,  SIZE, 0.0f,
-         SIZE,  SIZE, 0.0f,
+    constexpr float size = 100000.0f;
+    const float vertices[] = {
+        -size, -size, 0.0f,
+         size, -size, 0.0f,
+        -size,  size, 0.0f,
+         size,  size, 0.0f,
     };
 
     glGenVertexArrays(1, &m_GridVAO);
     glGenBuffers(1, &m_GridVBO);
-
     glBindVertexArray(m_GridVAO);
     glBindBuffer(GL_ARRAY_BUFFER, m_GridVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    glBindVertexArray(0);
+}
 
+void Game::SetupFullscreenQuad()
+{
+    const float vertices[] = {
+        -1.0f, -1.0f,
+         1.0f, -1.0f,
+        -1.0f,  1.0f,
+         1.0f,  1.0f,
+    };
+
+    glGenVertexArrays(1, &m_FullscreenVAO);
+    glGenBuffers(1, &m_FullscreenVBO);
+    glBindVertexArray(m_FullscreenVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_FullscreenVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
     glBindVertexArray(0);
 }
 
 void Game::CreateCheckerTexture()
 {
-    const int texSize = 64;
-    const int checkSize = texSize / 2;
-    unsigned char data[texSize * texSize * 4];
+    constexpr int textureSize = 64;
+    constexpr int checkerSize = textureSize / 2;
+    unsigned char data[textureSize * textureSize * 4];
 
-    for (int y = 0; y < texSize; y++)
+    for (int y = 0; y < textureSize; ++y)
     {
-        for (int x = 0; x < texSize; x++)
+        for (int x = 0; x < textureSize; ++x)
         {
-            int idx = (y * texSize + x) * 4;
-            bool isWhite = ((x / checkSize) + (y / checkSize)) % 2 == 0;
-            unsigned char c = isWhite ? 255 : 64;
-            data[idx + 0] = c;
-            data[idx + 1] = c;
-            data[idx + 2] = c;
-            data[idx + 3] = 255;
+            const int index = (y * textureSize + x) * 4;
+            const bool light = ((x / checkerSize) + (y / checkerSize)) % 2 == 0;
+            const unsigned char value = light ? 255 : 64;
+            data[index + 0] = value;
+            data[index + 1] = value;
+            data[index + 2] = value;
+            data[index + 3] = 255;
         }
     }
-
-    m_TestTexture.CreateFromData(texSize, texSize, data);
+    m_TestTexture.CreateFromData(textureSize, textureSize, data);
 }
 
-void Game::RenderToFramebuffer()
+void Game::Draw2DGrid(const glm::mat4& viewProjection)
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_GameViewFramebuffer);
-    glViewport(0, 0, m_GameViewWidth, m_GameViewHeight);
-    
-    // 清除为红色以便调试
-    glClearColor(0.5f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0.12f, 0.12f, 0.12f, 1.0f);  // 恢复原始清除色
-
-    // 禁用深度测试（帧缓冲没有深度附件）
-    glDisable(GL_DEPTH_TEST);
-
-    if (m_Camera)
+    m_Grid2DShader.Bind();
+    const GLint matrixLocation = glGetUniformLocation(m_Grid2DShader.GetID(), "u_MVP");
+    if (matrixLocation != -1)
     {
-        float aspect = (m_GameViewHeight > 0)
-            ? static_cast<float>(m_GameViewWidth) / static_cast<float>(m_GameViewHeight)
-            : 1.0f;
+        glUniformMatrix4fv(matrixLocation, 1, GL_FALSE, &viewProjection[0][0]);
+    }
+    glBindVertexArray(m_GridVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
 
-        glm::mat4 vp = m_Camera->GetViewProjectionMatrix(aspect);
+void Game::Draw3DGrid()
+{
+    const glm::vec3 position = m_Editor.GetSceneCameraPosition();
+    const glm::vec3 forward = m_Editor.GetSceneCameraForward();
+    const glm::vec3 right = m_Editor.GetSceneCameraRight();
+    const glm::vec3 up = m_Editor.GetSceneCameraUp();
+    const float aspect = static_cast<float>(m_SceneFramebuffer.GetWidth()) /
+                         static_cast<float>(std::max(1, m_SceneFramebuffer.GetHeight()));
 
-        // 绘制网格
-        m_GridShader.Bind();
-        GLint mvpLoc = glGetUniformLocation(m_GridShader.GetID(), "u_MVP");
-        if (mvpLoc != -1)
+    m_Grid3DShader.Bind();
+    glUniform3fv(glGetUniformLocation(m_Grid3DShader.GetID(), "u_CameraPos"), 1, &position.x);
+    glUniform3fv(glGetUniformLocation(m_Grid3DShader.GetID(), "u_CameraForward"), 1, &forward.x);
+    glUniform3fv(glGetUniformLocation(m_Grid3DShader.GetID(), "u_CameraRight"), 1, &right.x);
+    glUniform3fv(glGetUniformLocation(m_Grid3DShader.GetID(), "u_CameraUp"), 1, &up.x);
+    glUniform1f(glGetUniformLocation(m_Grid3DShader.GetID(), "u_FOV"), m_Editor.GetSceneCameraFov());
+    glUniform1f(glGetUniformLocation(m_Grid3DShader.GetID(), "u_AspectRatio"), aspect);
+    glBindVertexArray(m_FullscreenVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
+void Game::RenderSceneView()
+{
+    m_SceneFramebuffer.Bind();
+    glClearColor(0.105f, 0.110f, 0.120f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    const float aspect = static_cast<float>(m_SceneFramebuffer.GetWidth()) /
+                         static_cast<float>(std::max(1, m_SceneFramebuffer.GetHeight()));
+    const glm::mat4 viewProjection = m_Editor.GetSceneViewProjectionMatrix(aspect);
+
+    glDisable(GL_DEPTH_TEST);
+    if (m_Editor.IsSceneView3D())
+    {
+        Draw3DGrid();
+        glEnable(GL_DEPTH_TEST);
+    }
+    else
+    {
+        Draw2DGrid(viewProjection);
+    }
+
+    m_SpriteBatch.Begin(viewProjection);
+    m_SpriteBatch.End();
+
+    glDisable(GL_DEPTH_TEST);
+    eng::Framebuffer::Unbind();
+}
+
+eng::Camera* Game::FindGameCamera() const
+{
+    if (!m_Scene)
+    {
+        return nullptr;
+    }
+    for (const auto& object : m_Scene->GetGameObjects())
+    {
+        if (object && object->IsActive())
         {
-            glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &vp[0][0]);
+            if (eng::Camera* camera = object->GetComponent<eng::Camera>())
+            {
+                return camera;
+            }
         }
-        glBindVertexArray(m_GridVAO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glBindVertexArray(0);
+    }
+    return nullptr;
+}
 
-        // 绘制精灵
-        m_SpriteBatch.Begin(vp);
+void Game::RenderGameView()
+{
+    m_GameFramebuffer.Bind();
+    glClearColor(0.075f, 0.080f, 0.090f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    if (eng::Camera* camera = FindGameCamera())
+    {
+        const float aspect = static_cast<float>(m_GameFramebuffer.GetWidth()) /
+                             static_cast<float>(std::max(1, m_GameFramebuffer.GetHeight()));
+        if (camera->GetProjectionType() == eng::Camera::ProjectionType::Perspective)
+            glEnable(GL_DEPTH_TEST);
+        else
+            glDisable(GL_DEPTH_TEST);
+
+        m_SpriteBatch.Begin(camera->GetViewProjectionMatrix(aspect));
         m_SpriteBatch.End();
     }
 
-    // 恢复深度测试
-    glEnable(GL_DEPTH_TEST);
-
-    // 恢复默认帧缓冲和视口
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, m_WindowWidth, m_WindowHeight);
+    glDisable(GL_DEPTH_TEST);
+    eng::Framebuffer::Unbind();
 }
 
 void Game::Update(float deltaTime)
 {
-    if (m_Scene)
+    GLFWwindow* window = glfwGetCurrentContext();
+    glfwGetFramebufferSize(window, &m_WindowWidth, &m_WindowHeight);
+
+    if (m_Scene && m_Editor.ShouldSimulate())
     {
         m_Scene->Update(deltaTime);
     }
 
-    // 编辑器模式：渲染到帧缓冲 + 绘制 UI
-    if (m_Editor.IsEditorMode())
-    {
-        // 1. 渲染场景到 GameView 帧缓冲
-        RenderToFramebuffer();
+    const glm::ivec2 sceneSize = m_Editor.GetSceneViewportSize();
+    const glm::ivec2 gameSize = m_Editor.GetGameViewportSize();
+    m_SceneFramebuffer.Resize(std::clamp(sceneSize.x, 1, 4096),
+                              std::clamp(sceneSize.y, 1, 4096));
+    m_GameFramebuffer.Resize(std::clamp(gameSize.x, 1, 4096),
+                             std::clamp(gameSize.y, 1, 4096));
 
-        // 2. 绘制编辑器 UI
-        m_Editor.BeginFrame();
-        m_Editor.DrawMenuBar(m_Scene.get());
-        m_Editor.DrawSceneHierarchy(m_Scene.get());
-        m_Editor.DrawInspector(m_Editor.GetSelectedObject());
-        m_Editor.DrawGameView(m_GameViewTexture, m_GameViewWidth, m_GameViewHeight);
-        m_Editor.EndFrame();
-    }
-    else
-    {
-        // 运行时模式：直接渲染到屏幕
-        glViewport(0, 0, m_WindowWidth, m_WindowHeight);
-        glClear(GL_COLOR_BUFFER_BIT);
+    RenderSceneView();
+    RenderGameView();
 
-        if (!m_Camera) return;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, m_WindowWidth, m_WindowHeight);
+    glClearColor(0.105f, 0.110f, 0.120f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        float aspect = (m_WindowHeight > 0)
-            ? static_cast<float>(m_WindowWidth) / static_cast<float>(m_WindowHeight)
-            : 1.0f;
-
-        glm::mat4 vp = m_Camera->GetViewProjectionMatrix(aspect);
-
-        m_GridShader.Bind();
-        GLint mvpLoc = glGetUniformLocation(m_GridShader.GetID(), "u_MVP");
-        if (mvpLoc != -1)
-        {
-            glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &vp[0][0]);
-        }
-        glBindVertexArray(m_GridVAO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glBindVertexArray(0);
-
-        m_SpriteBatch.Begin(vp);
-        m_SpriteBatch.End();
-    }
+    m_Editor.BeginFrame();
+    m_Editor.DrawLayout(m_Scene.get(),
+                        m_SceneFramebuffer.GetColorAttachment(),
+                        m_SceneFramebuffer.GetWidth(), m_SceneFramebuffer.GetHeight(),
+                        m_GameFramebuffer.GetColorAttachment(),
+                        m_GameFramebuffer.GetWidth(), m_GameFramebuffer.GetHeight());
+    m_Editor.EndFrame();
 }
 
 void Game::Destroy()
 {
-    m_Editor.Shutdown();
     m_Scene.reset();
+    eng::MonoRuntime::GetInstance().Shutdown();
+    m_SceneFramebuffer.Destroy();
+    m_GameFramebuffer.Destroy();
     if (m_GridVAO != 0) glDeleteVertexArrays(1, &m_GridVAO);
     if (m_GridVBO != 0) glDeleteBuffers(1, &m_GridVBO);
-    if (m_GameViewTexture != 0) glDeleteTextures(1, &m_GameViewTexture);
-    if (m_GameViewFramebuffer != 0) glDeleteFramebuffers(1, &m_GameViewFramebuffer);
+    if (m_FullscreenVAO != 0) glDeleteVertexArrays(1, &m_FullscreenVAO);
+    if (m_FullscreenVBO != 0) glDeleteBuffers(1, &m_FullscreenVBO);
+    m_GridVAO = 0;
+    m_GridVBO = 0;
+    m_FullscreenVAO = 0;
+    m_FullscreenVBO = 0;
+    m_Editor.Shutdown();
 }

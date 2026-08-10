@@ -12,14 +12,15 @@ namespace eng
         if (!scene) return false;
 
         nlohmann::json root;
+        root["version"] = 2;
         root["name"] = scene->GetName();
         root["objects"] = nlohmann::json::array();
 
-        for (const auto& goPtr : scene->GetRootGameObjects())
+        for (GameObject* go : scene->GetRootGameObjects())
         {
-            if (goPtr)
+            if (go)
             {
-                root["objects"].push_back(goPtr->Serialize());
+                root["objects"].push_back(go->Serialize());
             }
         }
 
@@ -73,11 +74,7 @@ namespace eng
         {
             for (auto& objJson : root["objects"])
             {
-                auto go = GameObject::Deserialize(objJson);
-                if (go)
-                {
-                    scene->AddGameObject(std::move(go));
-                }
+                GameObject::Deserialize(*scene, objJson);
             }
         }
 

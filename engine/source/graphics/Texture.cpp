@@ -1,4 +1,5 @@
 #include "graphics/Texture.h"
+#include "core/ProjectPaths.h"
 #include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -25,7 +26,9 @@ namespace eng
 
         int channels;
         stbi_set_flip_vertically_on_load(1);  // OpenGL 纹理坐标原点在左下
-        unsigned char* data = stbi_load(path.c_str(), &m_Width, &m_Height, &channels, 4);  // 强制 RGBA
+        const std::filesystem::path resolvedPath = ProjectPaths::ResolveResource(path);
+        unsigned char* data = stbi_load(resolvedPath.string().c_str(), &m_Width, &m_Height,
+                                        &channels, 4);  // 强制 RGBA
 
         if (!data)
         {

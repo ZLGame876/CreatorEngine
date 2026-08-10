@@ -91,14 +91,19 @@ namespace eng
 
         // 层级快捷方法
         GameObject* GetParent() const;
+        bool SetParent(GameObject* parent, bool worldPositionStays = true);
         const std::vector<Transform*>& GetChildren() const { return m_Transform->GetChildren(); }
+
+        // Transform 不能被移除。
+        bool RemoveComponent(Component* component);
 
         // 更新所有组件
         void Update(float deltaTime);
 
         // 序列化
         nlohmann::json Serialize() const;
-        static std::unique_ptr<GameObject> Deserialize(const nlohmann::json& json);
+        static GameObject* Deserialize(Scene& scene, const nlohmann::json& json,
+                                       GameObject* parent = nullptr);
 
         const char* GetClassName() const override { return "GameObject"; }
 

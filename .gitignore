@@ -6,6 +6,14 @@ source/main
 source/main.dSYM/
 build/
 .cache/
+cmake-build-*/
+.idea/
+Assets/Scripts/bin/
+Assets/Scripts/obj/
+managed/**/bin/
+managed/**/obj/
+build_error.txt
+build_output.txt
 ThirdParty/imgui.zip
 imgui.ini
 *.obj

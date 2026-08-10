@@ -1,4 +1,5 @@
 #include "graphics/shaderprogram.h"
+#include "core/ProjectPaths.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -15,7 +16,8 @@ namespace eng
 
     std::string ShaderProgram::ReadFile(const std::string& path)
     {
-        std::ifstream file(path);
+        const std::filesystem::path resolvedPath = ProjectPaths::ResolveResource(path);
+        std::ifstream file(resolvedPath);
         if (!file.is_open())
         {
             std::cerr << "无法打开着色器文件: " << path << std::endl;

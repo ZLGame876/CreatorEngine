@@ -5,6 +5,22 @@ namespace eng
 {
     Camera* Camera::s_MainCamera = nullptr;
 
+    void Camera::Awake()
+    {
+        if (!s_MainCamera)
+        {
+            s_MainCamera = this;
+        }
+    }
+
+    void Camera::OnDestroy()
+    {
+        if (s_MainCamera == this)
+        {
+            s_MainCamera = nullptr;
+        }
+    }
+
     void Camera::SetOrthographic(float size, float nearPlane, float farPlane)
     {
         m_ProjectionType = ProjectionType::Orthographic;

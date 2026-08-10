@@ -38,6 +38,9 @@ namespace eng
         nlohmann::json Serialize() const override;
         void Deserialize(const nlohmann::json& json) override;
 
+        void Awake() override;
+        void OnDestroy() override;
+
         const char* GetClassName() const override { return "Camera"; }
 
         // 静态快捷方法：获取主相机
