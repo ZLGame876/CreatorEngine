@@ -12,6 +12,8 @@ Assets/Scripts/bin/
 Assets/Scripts/obj/
 managed/**/bin/
 managed/**/obj/
+tests/**/bin/
+tests/**/obj/
 build_error.txt
 build_output.txt
 ThirdParty/imgui.zip

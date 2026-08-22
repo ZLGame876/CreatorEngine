@@ -6,6 +6,14 @@
 
 脚本层采用 `Object -> Component -> Script -> CSharpScript` 原生继承链，并提供可选 Mono embedding 后端。启用 Mono 后，C# 脚本可接收 `Awake/Start/Update/OnDestroy` 生命周期并读写 GameObject 的 Transform 位置。
 
+## 目标架构
+
+CreatorEngine 正在向“托管玩法层 + 原生平台/RHI 层”的混合架构演进：C# 层同时提供 Unity 风格 `GameObject + Component` 组合模型和 UE 风格 `Actor -> Pawn -> Character` 玩法继承树；C++ 层继续负责窗口、资源、物理桥和 Vulkan/Metal 等平台能力。
+
+完整设计、类图、目标目录树、Enhanced Input、Animation Graph、Mono 热重载方案以及 MVP 到 Alpha 路线图见 [CreatorEngine 混合架构设计](docs/CREATORENGINE_ARCHITECTURE.md)。
+
+当前 `managed/CreatorEngine.Managed` 已包含可编译的对象模型、默认 World Bootstrap、Enhanced Input 运行时骨架、Animation State Machine 和 Blend Space 1D/2D 骨架。它们尚未全部接入当前原生 Scene/Editor；OpenGL 仍是现阶段实际渲染后端，Vulkan/Metal 属于路线图能力。
+
 ## 环境要求
 
 - macOS（Apple Silicon 或 Intel）、Windows
@@ -87,7 +95,7 @@ Windows 如果 CMake 无法定位 SDK，请将 `MONO_ROOT` 设置为 Mono 安装
 - Namespace: `CreatorGame`
 - Class: `VerticalBob`
 
-托管基类位于 `managed/CreatorEngine.Managed/MonoBehaviour.cs`。当前桥接已支持生命周期与 Transform Position；程序集热重载、公开字段反射、资源 API、输入 API 和完整调试器仍是后续工作。
+托管基类位于 `managed/CreatorEngine.Managed/MonoBehaviour.cs`，现在正式继承 `Component`。当前原生桥接已支持生命周期与 Transform Position；程序集 domain 热重载、公开字段 Inspector 反射、托管 World 与原生 Scene 同步、资源 API 和完整调试器仍是后续工作。
 
 ## 项目结构
 
@@ -107,8 +115,13 @@ Windows 如果 CMake 无法定位 SDK，请将 `MONO_ROOT` 设置为 Mono 安装
 │   ├── scripting/                 # MonoRuntime/CSharpScript（Mono 后端可选）
 │   ├── input/InputManager         # 键盘状态管理
 │   └── editor/Editor              # ImGui 场景编辑器
-├── managed/CreatorEngine.Managed/ # C# MonoBehaviour API 与原生内部调用声明
+├── managed/CreatorEngine.Managed/ # C# 托管引擎 API
+│   ├── Core/                      # CreatorObject/GameObject/Component/Transform
+│   ├── Gameplay/                  # Actor/Pawn/Character/World/GameMode/Controller
+│   ├── Input/                     # Enhanced Input Action/Context/Modifier/Trigger
+│   └── Animation/                 # Graph/State Machine/Blend Space/Animator
 ├── Assets/Scripts/                # 示例 C# 游戏脚本项目
+├── docs/                           # 架构、格式与迁移设计文档
 ├── tests/                         # 核心层级与序列化测试
 ├── CMakeLists.txt                 # 跨平台构建（根 + engine）
 ├── engine/CMakeLists.txt          # 引擎静态库构建
@@ -134,5 +147,11 @@ Windows 如果 CMake 无法定位 SDK，请将 `MONO_ROOT` 设置为 Mono 安装
 - [x] Unity 风格 ImGui 编辑器工作区（Hierarchy/Scene/Game/Inspector/Project/Console）
 - [x] Scene View 的 2D/3D 按钮切换与独立编辑器相机
 - [x] 可选 Mono C# 生命周期与 Transform Position 桥接
+- [x] C# 混合对象模型与默认可玩 World 基础逻辑
+- [x] C# Enhanced Input 运行时骨架
+- [x] C# Animation State Machine 与 Blend Space 骨架
+- [ ] 托管 World、Enhanced Input 与当前原生 Scene/InputManager 完整接入
 - [ ] Mono 程序集热重载与 Inspector 字段反射
 - [ ] 3D MeshRenderer、材质、灯光和 3D 物理
+- [ ] Vulkan（Windows）和 Metal（macOS）RHI
+- [ ] Animation Graph 可视化编辑器与骨骼动画运行时

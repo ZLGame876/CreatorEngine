@@ -1,18 +1,35 @@
 namespace CreatorEngine
 {
-    public abstract class MonoBehaviour
+    public abstract class MonoBehaviour : Component
     {
-        internal ulong NativeHandle = 0;
-
         public Vector3 Position
         {
             get
             {
+                if (NativeHandle == 0)
+                {
+                    if (IsAttached)
+                    {
+                        return Transform.Position;
+                    }
+                    throw new System.InvalidOperationException(
+                        $"{GetType().Name} has no managed owner or native handle.");
+                }
                 InternalCalls.Transform_GetPosition(NativeHandle, out Vector3 value);
                 return value;
             }
             set
             {
+                if (NativeHandle == 0)
+                {
+                    if (IsAttached)
+                    {
+                        Transform.Position = value;
+                        return;
+                    }
+                    throw new System.InvalidOperationException(
+                        $"{GetType().Name} has no managed owner or native handle.");
+                }
                 InternalCalls.Transform_SetPosition(NativeHandle, ref value);
             }
         }
