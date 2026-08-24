@@ -59,6 +59,17 @@ cmake --build build
 ./main
 ```
 
+## Playable 2D vertical slice
+
+The sample `Game` application now ships with a small platform adventure instead of a static editor demo. Press the editor Play button to run it:
+
+- A/D or Left/Right moves the player; Space jumps.
+- Platforms use `Rigidbody2D` and `BoxCollider2D`, including a moving platform.
+- The red patrol object and the death plane respawn the player; `R` also resets the run.
+- Reach the gold goal to win. The Game view shows the runtime status.
+
+The reusable runtime pieces live in `engine/source/gameplay/GameplayComponents.*` (`CharacterController2D`, `CameraFollow2D`, `Patrol2D`, `HealthComponent`, `Hazard2D`, and `Goal2D`). This is a complete 2D gameplay vertical slice, not yet a commercial-ready engine: 3D meshes/materials, prefabs, asset importing/packaging, Mono domain hot reload, and visual animation authoring remain on the roadmap.
+
 窗口默认按主显示器 80% 尺寸创建并居中显示，也可在 `Init()` 中传入固定宽高。
 
 ## 编辑器工作流

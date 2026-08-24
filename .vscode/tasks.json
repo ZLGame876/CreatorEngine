@@ -41,6 +41,7 @@
                 "engine/source/physics/BoxCollider2D.cpp",
                 "engine/source/physics/CircleCollider2D.cpp",
                 "engine/source/physics/PhysicsWorld.cpp",
+                "engine/source/gameplay/GameplayComponents.cpp",
                 "ThirdParty/imgui/imgui.cpp",
                 "ThirdParty/imgui/imgui_draw.cpp",
                 "ThirdParty/imgui/imgui_tables.cpp",
