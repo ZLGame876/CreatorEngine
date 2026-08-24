@@ -51,6 +51,9 @@ namespace eng
         bool IsSceneView3D() const { return m_SceneViewMode == SceneViewMode::Mode3D; }
         PlayState GetPlayState() const { return m_PlayState; }
         bool ShouldSimulate() const { return m_PlayState == PlayState::Playing; }
+        void SetPlayState(PlayState state) { m_PlayState = state; }
+        void SetRuntimeStatus(const std::string& status) { m_RuntimeStatus = status; }
+        const std::string& GetRuntimeStatus() const { return m_RuntimeStatus; }
 
         glm::ivec2 GetSceneViewportSize() const { return m_SceneViewportSize; }
         glm::ivec2 GetGameViewportSize() const { return m_GameViewportSize; }
@@ -94,6 +97,7 @@ namespace eng
 
         char m_SavePath[256] = "scene.json";
         std::vector<std::string> m_ConsoleMessages;
+        std::string m_RuntimeStatus;
 
         void ApplyStyle();
         void DrawMenuBar(Scene* scene);

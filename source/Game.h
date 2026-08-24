@@ -11,6 +11,13 @@ public:
     void Destroy() override;
 
 private:
+    void BuildPlatformGame();
+    eng::GameObject* CreateBox(const char* name, const glm::vec2& position,
+                               const glm::vec2& size, const glm::vec4& color,
+                               bool dynamic = false, bool trigger = false);
+    void HandleCollision(const eng::CollisionInfo& collision);
+    void ResetPlayer();
+    void UpdateRuntimeStatus();
     void SetupGridQuad();
     void SetupFullscreenQuad();
     void CreateCheckerTexture();
@@ -33,6 +40,13 @@ private:
     eng::SpriteBatch m_SpriteBatch;
     eng::ShaderProgram m_SpriteShader;
     eng::Texture2D m_TestTexture;
+
+    eng::GameObject* m_Player = nullptr;
+    eng::CharacterController2D* m_PlayerController = nullptr;
+    eng::HealthComponent* m_PlayerHealth = nullptr;
+    bool m_GameWon = false;
+    bool m_PreviousResetPressed = false;
+    float m_StatusTimer = 0.0f;
 
     eng::Editor m_Editor;
     eng::Framebuffer m_SceneFramebuffer;

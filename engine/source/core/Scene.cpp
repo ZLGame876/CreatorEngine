@@ -12,6 +12,10 @@ namespace eng
 
     Scene::~Scene()
     {
+        // Components unregister themselves from PhysicsWorld during destruction.
+        // Keep the world alive until every GameObject has been released.
+        m_GameObjects.clear();
+        m_PhysicsWorld.reset();
     }
 
     GameObject* Scene::CreateGameObject(const std::string& name)

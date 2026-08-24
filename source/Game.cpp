@@ -5,9 +5,14 @@
 #include <algorithm>
 #include <iostream>
 
+namespace
+{
+    constexpr glm::vec4 kSkyColor(0.10f, 0.16f, 0.26f, 1.0f);
+}
+
 bool Game::Init()
 {
-    m_Scene = std::make_unique<eng::Scene>("Sample Scene");
+    m_Scene = std::make_unique<eng::Scene>("Platform Adventure");
 
     GLFWwindow* window = glfwGetCurrentContext();
     glfwGetFramebufferSize(window, &m_WindowWidth, &m_WindowHeight);
@@ -26,15 +31,6 @@ bool Game::Init()
         std::cerr << "Failed to create editor framebuffers" << std::endl;
         return false;
     }
-
-    m_CameraObject = m_Scene->CreateGameObject("Main Camera");
-    eng::Camera* camera = m_CameraObject->AddComponent<eng::Camera>();
-    camera->SetOrthographic(m_WindowHeight * 0.5f);
-    m_CameraObject->GetTransform()->SetPosition(m_WindowWidth * 0.5f,
-                                                m_WindowHeight * 0.5f, 10.0f);
-    m_Editor.SetSceneView2DFrame(glm::vec2(m_WindowWidth * 0.5f,
-                                           m_WindowHeight * 0.5f),
-                                 m_WindowHeight * 0.5f);
 
     if (!m_SpriteShader.LoadFromFiles("source/shaders/sprite.vert",
                                       "source/shaders/sprite.frag") ||
@@ -57,35 +53,168 @@ bool Game::Init()
     SetupGridQuad();
     SetupFullscreenQuad();
     CreateCheckerTexture();
-
-    auto* center = m_Scene->CreateGameObject("Center Square");
-    auto* centerRenderer = center->AddComponent<eng::SpriteRenderer>();
-    centerRenderer->SetTexture(&m_TestTexture);
-    centerRenderer->SetSize(200.0f, 200.0f);
-    centerRenderer->SetColor(0.95f, 0.32f, 0.28f, 1.0f);
-    center->GetTransform()->SetPosition(m_WindowWidth * 0.5f, m_WindowHeight * 0.5f, 0.0f);
-
-    auto* group = m_Scene->CreateGameObject("Demo Group");
-    group->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
-
-    auto* topLeft = m_Scene->CreateGameObject("Top Left");
-    topLeft->SetParent(group, false);
-    auto* topLeftRenderer = topLeft->AddComponent<eng::SpriteRenderer>();
-    topLeftRenderer->SetTexture(&m_TestTexture);
-    topLeftRenderer->SetSize(100.0f, 100.0f);
-    topLeftRenderer->SetColor(0.28f, 0.78f, 0.48f, 1.0f);
-    topLeft->GetTransform()->SetPosition(150.0f, m_WindowHeight - 150.0f, 0.0f);
-
-    auto* bottomRight = m_Scene->CreateGameObject("Bottom Right");
-    bottomRight->SetParent(group, false);
-    auto* bottomRightRenderer = bottomRight->AddComponent<eng::SpriteRenderer>();
-    bottomRightRenderer->SetTexture(&m_TestTexture);
-    bottomRightRenderer->SetSize(120.0f, 120.0f);
-    bottomRightRenderer->SetColor(0.24f, 0.50f, 0.92f, 1.0f);
-    bottomRight->GetTransform()->SetPosition(m_WindowWidth - 150.0f, 150.0f, 0.0f);
+    BuildPlatformGame();
 
     glClearColor(0.105f, 0.110f, 0.120f, 1.0f);
     return true;
+}
+
+eng::GameObject* Game::CreateBox(const char* name, const glm::vec2& position,
+                                 const glm::vec2& size, const glm::vec4& color,
+                                 bool dynamic, bool trigger)
+{
+    eng::GameObject* object = m_Scene->CreateGameObject(name);
+    object->GetTransform()->SetPosition(position.x, position.y, 0.0f);
+    auto* renderer = object->AddComponent<eng::SpriteRenderer>();
+    renderer->SetTexture(&m_TestTexture);
+    renderer->SetSize(size);
+    renderer->SetColor(color);
+    auto* collider = object->AddComponent<eng::BoxCollider2D>();
+    collider->SetSize(size);
+    collider->SetTrigger(trigger);
+    if (dynamic)
+    {
+        auto* body = object->AddComponent<eng::Rigidbody2D>();
+        body->SetMass(1.0f);
+    }
+    return object;
+}
+
+void Game::BuildPlatformGame()
+{
+    constexpr float worldWidth = 2400.0f;
+    constexpr float worldHeight = 900.0f;
+
+    m_Scene->GetPhysicsWorld()->SetGravity(glm::vec2(0.0f, -1400.0f));
+
+    // A simple layered background keeps the sample readable without external assets.
+    CreateBox("Sky", glm::vec2(worldWidth * 0.5f, worldHeight * 0.5f),
+              glm::vec2(worldWidth, worldHeight), kSkyColor);
+    auto* sky = m_Scene->GetGameObjects().back().get();
+    sky->GetComponent<eng::BoxCollider2D>()->SetTrigger(true);
+    sky->GetComponent<eng::SpriteRenderer>()->SetLayer(-100);
+
+    m_Player = m_Scene->CreateGameObject("Player");
+    m_Player->GetTransform()->SetPosition(480.0f, 180.0f, 0.0f);
+    auto* playerSprite = m_Player->AddComponent<eng::SpriteRenderer>();
+    playerSprite->SetTexture(&m_TestTexture);
+    playerSprite->SetSize(48.0f, 72.0f);
+    playerSprite->SetColor(0.25f, 0.72f, 1.0f, 1.0f);
+    auto* playerBody = m_Player->AddComponent<eng::Rigidbody2D>();
+    playerBody->SetMass(1.0f);
+    playerBody->SetLinearDamping(10.0f);
+    auto* playerCollider = m_Player->AddComponent<eng::BoxCollider2D>();
+    playerCollider->SetSize(44.0f, 68.0f);
+    m_PlayerController = m_Player->AddComponent<eng::CharacterController2D>();
+    m_PlayerController->SetMoveSpeed(300.0f);
+    m_PlayerController->SetJumpVelocity(680.0f);
+    m_PlayerHealth = m_Player->AddComponent<eng::HealthComponent>(1);
+
+    CreateBox("Ground", glm::vec2(worldWidth * 0.5f, 30.0f),
+              glm::vec2(worldWidth, 60.0f), glm::vec4(0.18f, 0.23f, 0.31f, 1.0f));
+    CreateBox("Platform A", glm::vec2(500.0f, 230.0f), glm::vec2(300.0f, 32.0f),
+              glm::vec4(0.24f, 0.55f, 0.80f, 1.0f));
+    CreateBox("Platform B", glm::vec2(900.0f, 360.0f), glm::vec2(300.0f, 32.0f),
+              glm::vec4(0.30f, 0.65f, 0.48f, 1.0f));
+    CreateBox("Platform C", glm::vec2(1350.0f, 260.0f), glm::vec2(280.0f, 32.0f),
+              glm::vec4(0.80f, 0.48f, 0.25f, 1.0f));
+    CreateBox("Platform D", glm::vec2(1750.0f, 430.0f), glm::vec2(320.0f, 32.0f),
+              glm::vec4(0.54f, 0.38f, 0.82f, 1.0f));
+    CreateBox("Platform E", glm::vec2(2150.0f, 300.0f), glm::vec2(300.0f, 32.0f),
+              glm::vec4(0.25f, 0.70f, 0.72f, 1.0f));
+
+    auto* moving = CreateBox("Moving Platform", glm::vec2(1120.0f, 500.0f),
+                             glm::vec2(190.0f, 28.0f), glm::vec4(0.95f, 0.75f, 0.24f, 1.0f));
+    auto* movingBody = moving->AddComponent<eng::Rigidbody2D>();
+    movingBody->SetKinematic(true);
+    auto* movingPatrol = moving->AddComponent<eng::Patrol2D>();
+    movingPatrol->SetHorizontalRange(1050.0f, 1450.0f);
+    movingPatrol->SetSpeed(150.0f);
+
+    auto* enemy = CreateBox("Patrol Hazard", glm::vec2(760.0f, 105.0f),
+                            glm::vec2(48.0f, 48.0f), glm::vec4(0.95f, 0.20f, 0.25f, 1.0f), false, true);
+    enemy->AddComponent<eng::Hazard2D>(1);
+    auto* enemyPatrol = enemy->AddComponent<eng::Patrol2D>();
+    enemyPatrol->SetHorizontalRange(680.0f, 840.0f);
+    enemyPatrol->SetSpeed(110.0f);
+
+    auto* goal = CreateBox("Goal", glm::vec2(2240.0f, 380.0f),
+                           glm::vec2(42.0f, 120.0f), glm::vec4(1.0f, 0.82f, 0.18f, 1.0f), false, true);
+    goal->AddComponent<eng::Goal2D>();
+
+    // A trigger below the level makes falling off the route a normal respawn.
+    auto* deathPlane = CreateBox("Death Plane", glm::vec2(worldWidth * 0.5f, -90.0f),
+                                 glm::vec2(worldWidth, 40.0f), glm::vec4(0.8f, 0.1f, 0.1f, 0.0f), false, true);
+    deathPlane->GetComponent<eng::SpriteRenderer>()->SetLayer(-10);
+    deathPlane->AddComponent<eng::Hazard2D>(1);
+
+    m_CameraObject = m_Scene->CreateGameObject("Main Camera");
+    auto* camera = m_CameraObject->AddComponent<eng::Camera>();
+    camera->SetOrthographic(270.0f, -1000.0f, 1000.0f);
+    m_CameraObject->GetTransform()->SetPosition(480.0f, 270.0f, 10.0f);
+    auto* follow = m_CameraObject->AddComponent<eng::CameraFollow2D>();
+    follow->SetTarget(m_Player);
+    follow->SetBounds(glm::vec2(0.0f, 0.0f), glm::vec2(worldWidth, worldHeight));
+    follow->SetSmoothing(10.0f);
+
+    m_Scene->GetPhysicsWorld()->SetCollisionCallback(
+        [this](const eng::CollisionInfo& collision) { HandleCollision(collision); });
+    m_Editor.SetSceneView2DFrame(glm::vec2(480.0f, 270.0f), 270.0f);
+    m_Editor.SetRuntimeStatus("PLAY: A/D or arrows move   SPACE jumps   R respawns");
+}
+
+void Game::HandleCollision(const eng::CollisionInfo& collision)
+{
+    if (!m_Player || !collision.colliderA || !collision.colliderB)
+    {
+        return;
+    }
+    eng::GameObject* objectA = collision.colliderA->GetGameObject();
+    eng::GameObject* objectB = collision.colliderB->GetGameObject();
+    eng::GameObject* other = objectA == m_Player ? objectB : (objectB == m_Player ? objectA : nullptr);
+    if (!other)
+    {
+        return;
+    }
+    if (other->GetComponent<eng::Goal2D>())
+    {
+        m_GameWon = true;
+        m_Editor.SetRuntimeStatus("YOU WIN! Press R to play again");
+        if (m_PlayerController && m_PlayerController->GetRigidbody())
+        {
+            m_PlayerController->GetRigidbody()->SetVelocity(glm::vec2(0.0f));
+        }
+    }
+    if (auto* hazard = other->GetComponent<eng::Hazard2D>())
+    {
+        if (m_PlayerHealth)
+        {
+            m_PlayerHealth->ApplyDamage(hazard->GetDamage());
+        }
+        ResetPlayer();
+    }
+}
+
+void Game::ResetPlayer()
+{
+    if (m_PlayerController)
+    {
+        m_PlayerController->Respawn();
+    }
+    if (m_PlayerHealth)
+    {
+        m_PlayerHealth->Reset();
+    }
+    m_GameWon = false;
+    m_StatusTimer = 1.0f;
+}
+
+void Game::UpdateRuntimeStatus()
+{
+    if (m_StatusTimer > 0.0f)
+    {
+        m_StatusTimer = std::max(0.0f, m_StatusTimer - 1.0f / 60.0f);
+    }
 }
 
 void Game::SetupGridQuad()
@@ -129,8 +258,7 @@ void Game::SetupFullscreenQuad()
 
 void Game::CreateCheckerTexture()
 {
-    constexpr int textureSize = 64;
-    constexpr int checkerSize = textureSize / 2;
+    constexpr int textureSize = 2;
     unsigned char data[textureSize * textureSize * 4];
 
     for (int y = 0; y < textureSize; ++y)
@@ -138,11 +266,9 @@ void Game::CreateCheckerTexture()
         for (int x = 0; x < textureSize; ++x)
         {
             const int index = (y * textureSize + x) * 4;
-            const bool light = ((x / checkerSize) + (y / checkerSize)) % 2 == 0;
-            const unsigned char value = light ? 255 : 64;
-            data[index + 0] = value;
-            data[index + 1] = value;
-            data[index + 2] = value;
+            data[index + 0] = 255;
+            data[index + 1] = 255;
+            data[index + 2] = 255;
             data[index + 3] = 255;
         }
     }
@@ -258,10 +384,20 @@ void Game::Update(float deltaTime)
     GLFWwindow* window = glfwGetCurrentContext();
     glfwGetFramebufferSize(window, &m_WindowWidth, &m_WindowHeight);
 
-    if (m_Scene && m_Editor.ShouldSimulate())
+    eng::InputManager& input = eng::CreatorEngine::GetInstance().GetInputManager();
+    const bool resetPressed = input.IsKeyPressed(GLFW_KEY_R);
+    if (resetPressed && !m_PreviousResetPressed)
     {
-        m_Scene->Update(deltaTime);
+        ResetPlayer();
+        m_Editor.SetRuntimeStatus("PLAY: A/D or arrows move   SPACE jumps   R respawns");
     }
+    m_PreviousResetPressed = resetPressed;
+
+    if (m_Scene && m_Editor.ShouldSimulate() && !m_GameWon)
+    {
+        m_Scene->Update(std::min(deltaTime, 1.0f / 20.0f));
+    }
+    UpdateRuntimeStatus();
 
     const glm::ivec2 sceneSize = m_Editor.GetSceneViewportSize();
     const glm::ivec2 gameSize = m_Editor.GetGameViewportSize();

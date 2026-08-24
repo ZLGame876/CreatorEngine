@@ -23,6 +23,13 @@
 #include "graphics/SpriteRenderer.h"
 #include "graphics/SpriteBatch.h"
 #include "graphics/Camera.h"
+#include "physics/Rigidbody2D.h"
+#include "physics/PhysicsMaterial.h"
+#include "physics/Collider2D.h"
+#include "physics/BoxCollider2D.h"
+#include "physics/CircleCollider2D.h"
+#include "physics/PhysicsWorld.h"
+#include "gameplay/GameplayComponents.h"
 
 // 编辑器
 #include "editor/Editor.h"

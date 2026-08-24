@@ -49,12 +49,13 @@ namespace eng
             if (overlapX < overlapY)
             {
                 depth = overlapX;
-                normal = glm::vec2((GetWorldCenter().x < box->GetWorldCenter().x) ? -1.0f : 1.0f, 0.0f);
+                // Collision normals consistently point from collider A to collider B.
+                normal = glm::vec2((GetWorldCenter().x < box->GetWorldCenter().x) ? 1.0f : -1.0f, 0.0f);
             }
             else
             {
                 depth = overlapY;
-                normal = glm::vec2(0.0f, (GetWorldCenter().y < box->GetWorldCenter().y) ? -1.0f : 1.0f);
+                normal = glm::vec2(0.0f, (GetWorldCenter().y < box->GetWorldCenter().y) ? 1.0f : -1.0f);
             }
 
             return true;

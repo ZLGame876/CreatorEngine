@@ -29,6 +29,7 @@ add_library(${PROJECT_NAME} STATIC
     source/physics/BoxCollider2D.cpp
     source/physics/CircleCollider2D.cpp
     source/physics/PhysicsWorld.cpp
+    source/gameplay/GameplayComponents.cpp
     ../ThirdParty/imgui/imgui.cpp
     ../ThirdParty/imgui/imgui_draw.cpp
     ../ThirdParty/imgui/imgui_tables.cpp
@@ -63,6 +64,7 @@ add_library(${PROJECT_NAME} STATIC
     source/physics/BoxCollider2D.h
     source/physics/CircleCollider2D.h
     source/physics/PhysicsWorld.h
+    source/gameplay/GameplayComponents.h
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

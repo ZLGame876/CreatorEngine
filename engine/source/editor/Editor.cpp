@@ -11,6 +11,7 @@
 #include "physics/BoxCollider2D.h"
 #include "physics/CircleCollider2D.h"
 #include "physics/Rigidbody2D.h"
+#include "gameplay/GameplayComponents.h"
 #include "scripting/CSharpScript.h"
 #include "scripting/MonoRuntime.h"
 
@@ -683,6 +684,20 @@ namespace eng
                 if (ImGui::DragFloat("Linear Damping", &linearDamping, 0.01f, 0.0f, 100.0f)) body->SetLinearDamping(linearDamping);
                 if (ImGui::DragFloat("Angular Damping", &angularDamping, 0.01f, 0.0f, 100.0f)) body->SetAngularDamping(angularDamping);
             }
+            else if (auto* controller = dynamic_cast<CharacterController2D*>(component))
+            {
+                float speed = controller->GetMoveSpeed();
+                float jump = controller->GetJumpVelocity();
+                ImGui::DragFloat("Move Speed", &speed, 1.0f, 0.0f, 5000.0f);
+                ImGui::DragFloat("Jump Velocity", &jump, 1.0f, 0.0f, 5000.0f);
+                controller->SetMoveSpeed(speed);
+                controller->SetJumpVelocity(jump);
+                ImGui::Text("Grounded: %s", controller->IsGrounded() ? "yes" : "no");
+            }
+            else if (auto* health = dynamic_cast<HealthComponent*>(component))
+            {
+                ImGui::Text("Health: %d / %d", health->GetCurrentHealth(), health->GetMaxHealth());
+            }
             else if (auto* box = dynamic_cast<BoxCollider2D*>(component))
             {
                 glm::vec2 size = box->GetSize();
@@ -726,6 +741,12 @@ namespace eng
             selected->AddComponent<Rigidbody2D>();
         if (ImGui::MenuItem("Box Collider 2D")) selected->AddComponent<BoxCollider2D>();
         if (ImGui::MenuItem("Circle Collider 2D")) selected->AddComponent<CircleCollider2D>();
+        if (ImGui::MenuItem("Character Controller 2D")) selected->AddComponent<CharacterController2D>();
+        if (ImGui::MenuItem("Camera Follow 2D")) selected->AddComponent<CameraFollow2D>();
+        if (ImGui::MenuItem("Patrol 2D")) selected->AddComponent<Patrol2D>();
+        if (ImGui::MenuItem("Health")) selected->AddComponent<HealthComponent>();
+        if (ImGui::MenuItem("Hazard 2D")) selected->AddComponent<Hazard2D>();
+        if (ImGui::MenuItem("Goal 2D")) selected->AddComponent<Goal2D>();
 
         ImGui::EndPopup();
     }
@@ -792,6 +813,11 @@ namespace eng
         {
             ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<intptr_t>(texture)), size,
                          ImVec2(0, 1), ImVec2(1, 0));
+            if (!m_RuntimeStatus.empty())
+            {
+                ImGui::SetCursorPos(ImVec2(16.0f, 16.0f));
+                ImGui::TextColored(ImVec4(1.0f, 0.86f, 0.25f, 1.0f), "%s", m_RuntimeStatus.c_str());
+            }
         }
     }
 
