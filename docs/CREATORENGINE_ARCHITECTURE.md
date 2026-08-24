@@ -90,7 +90,7 @@ extern "C" CreatorResult CE_Transform_GetPosition(
 ```
 
 - ABI 调用返回错误码，托管包装器转换为明确异常或 Result。
-- Native 对象销毁后 generation 增加，旧句柄访问得到 `InvalidHandle`。
+- Native 对象句柄由 `NativeHandleRegistry` 按索引和 generation 管理；最后一个托管引用释放后 generation 增加，旧句柄访问得到 `InvalidHandle`。Mono 的 Transform internal calls 已使用这套注册表。
 - 高频数据使用批量接口或映射缓冲，不为每个骨骼/顶点做一次 internal call。
 - Mono domain 卸载前断开全部托管委托，防止原生层调用已卸载方法。
 
@@ -709,7 +709,7 @@ Alpha 退出条件：
 ## 15. 当前仓库的迁移顺序
 
 1. 不立即改目录；先让 `managed/CreatorEngine.Managed` 成为稳定 API 程序集。
-2. 用 `NativeHandleRegistry` 替换 C# 当前接收的裸 `GameObject*` 数值句柄。
+2. 用 `NativeHandleRegistry` 替换 C# 当前接收的裸 `GameObject*` 数值句柄（第一版已完成，后续扩展到资源和组件句柄）。
 3. 把原生 Scene 的创建/销毁/Transform 逐项接到托管 World，而非维护两套权威对象树。
 4. 将当前 `InputManager` 变成 Native Device Backend，事件语义全部交给 C# Enhanced Input。
 5. 新建 RHI 接口，让现有 OpenGL Renderer 先实现 RHI，再并行增加 Vulkan/Metal。

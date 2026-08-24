@@ -21,6 +21,7 @@ add_library(${PROJECT_NAME} STATIC
     source/core/SceneSerializer.cpp
     source/scripting/MonoRuntime.cpp
     source/scripting/CSharpScript.cpp
+    source/scripting/NativeHandleRegistry.cpp
     source/editor/Editor.cpp
     source/physics/Rigidbody2D.cpp
     source/physics/PhysicsMaterial.cpp
@@ -55,6 +56,7 @@ add_library(${PROJECT_NAME} STATIC
     source/core/SceneSerializer.h
     source/scripting/MonoRuntime.h
     source/scripting/CSharpScript.h
+    source/scripting/NativeHandleRegistry.h
     source/physics/Rigidbody2D.h
     source/physics/PhysicsMaterial.h
     source/physics/Collider2D.h

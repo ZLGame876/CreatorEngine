@@ -2,6 +2,7 @@
 #include <core/ProjectPaths.h>
 #include <core/Scene.h>
 #include <core/SceneSerializer.h>
+#include <scripting/NativeHandleRegistry.h>
 
 #include <cmath>
 #include <filesystem>
@@ -52,6 +53,38 @@ int main()
     eng::GameObject* root = scene.CreateGameObject("Root");
     eng::GameObject* child = scene.CreateGameObject("Child");
     eng::GameObject* grandchild = scene.CreateGameObject("Grandchild");
+
+    eng::NativeHandleRegistry& handles = eng::NativeHandleRegistry::GetInstance();
+    const eng::NativeHandleRegistry::Handle handle = handles.Acquire(root);
+    const eng::NativeHandleRegistry::Handle sharedHandle = handles.Acquire(root);
+    if (!Require(handles.Resolve(handle) == root, "native handle should resolve to its object") ||
+        !Require(sharedHandle == handle, "same object should share its native handle") ||
+        !Require(handles.IsValid(handle), "native handle should be valid while acquired"))
+    {
+        handles.Release(handle);
+        handles.Release(sharedHandle);
+        return 1;
+    }
+    handles.Release(handle);
+    if (!Require(handles.IsValid(sharedHandle), "shared native handle should survive one release"))
+    {
+        handles.Release(sharedHandle);
+        return 1;
+    }
+    handles.Release(sharedHandle);
+    if (!Require(!handles.IsValid(handle), "released native handle should be invalid"))
+    {
+        return 1;
+    }
+
+    const eng::NativeHandleRegistry::Handle recycledHandle = handles.Acquire(root);
+    if (!Require(recycledHandle != handle,
+                 "reused native handle slot should advance its generation"))
+    {
+        handles.Release(recycledHandle);
+        return 1;
+    }
+    handles.Release(recycledHandle);
 
     root->GetTransform()->SetPosition(10.0f, 20.0f, 0.0f);
     child->GetTransform()->SetPosition(5.0f, 0.0f, 0.0f);

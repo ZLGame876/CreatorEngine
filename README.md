@@ -14,6 +14,8 @@ CreatorEngine 正在向“托管玩法层 + 原生平台/RHI 层”的混合架�
 
 当前 `managed/CreatorEngine.Managed` 已包含可编译的对象模型、默认 World Bootstrap、Enhanced Input 运行时骨架、Animation State Machine 和 Blend Space 1D/2D 骨架。它们尚未全部接入当前原生 Scene/Editor；OpenGL 仍是现阶段实际渲染后端，Vulkan/Metal 属于路线图能力。
 
+最近一次原生增量已加入 `NativeHandleRegistry`：Mono 脚本不再把 `GameObject*` 直接写入 C#，而是使用带 generation 的 `ulong` 句柄。多个脚本可安全共享对象句柄，最后一次释放后旧句柄失效；Transform internal call 会拒绝无效句柄。
+
 ## 环境要求
 
 - macOS（Apple Silicon 或 Intel）、Windows

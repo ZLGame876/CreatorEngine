@@ -4,6 +4,7 @@
 #include "core/ProjectPaths.h"
 #include "core/Transform.h"
 #include "scripting/CSharpScript.h"
+#include "scripting/NativeHandleRegistry.h"
 
 #include <cstdint>
 #include <iostream>
@@ -32,7 +33,11 @@ namespace eng
         void TransformGetPosition(std::uint64_t nativeHandle, ManagedVector3* result)
         {
             if (!nativeHandle || !result) return;
-            auto* object = reinterpret_cast<GameObject*>(static_cast<std::uintptr_t>(nativeHandle));
+            auto* object = NativeHandleRegistry::GetInstance().Resolve(nativeHandle);
+            if (!object)
+            {
+                return;
+            }
             const glm::vec3 position = object->GetTransform()->GetPosition();
             result->x = position.x;
             result->y = position.y;
@@ -42,7 +47,11 @@ namespace eng
         void TransformSetPosition(std::uint64_t nativeHandle, const ManagedVector3* value)
         {
             if (!nativeHandle || !value) return;
-            auto* object = reinterpret_cast<GameObject*>(static_cast<std::uintptr_t>(nativeHandle));
+            auto* object = NativeHandleRegistry::GetInstance().Resolve(nativeHandle);
+            if (!object)
+            {
+                return;
+            }
             object->GetTransform()->SetPosition(value->x, value->y, value->z);
         }
 
@@ -78,6 +87,7 @@ namespace eng
         struct ScriptInstance
         {
             std::uint32_t gcHandle = 0;
+            NativeHandleRegistry::Handle nativeHandle = 0;
             MonoMethod* update = nullptr;
             MonoMethod* onDestroy = nullptr;
         };
@@ -165,6 +175,7 @@ namespace eng
             {
                 mono_gchandle_free(pair.second.gcHandle);
             }
+            NativeHandleRegistry::GetInstance().Release(pair.second.nativeHandle);
         }
         m_Impl->instances.clear();
         m_Impl->assemblies.clear();
@@ -248,14 +259,19 @@ namespace eng
         }
         mono_runtime_object_init(object);
 
-        if (MonoClassField* field = FindField(klass, "NativeHandle"))
+        Impl::ScriptInstance instance;
+        instance.nativeHandle = NativeHandleRegistry::GetInstance().Acquire(script.GetGameObject());
+        if (!instance.nativeHandle)
         {
-            std::uint64_t handle = static_cast<std::uint64_t>(
-                reinterpret_cast<std::uintptr_t>(script.GetGameObject()));
-            mono_field_set_value(object, field, &handle);
+            m_LastError = "Mono script is not attached to a GameObject";
+            return false;
         }
 
-        Impl::ScriptInstance instance;
+        if (MonoClassField* field = FindField(klass, "NativeHandle"))
+        {
+            mono_field_set_value(object, field, &instance.nativeHandle);
+        }
+
         instance.gcHandle = mono_gchandle_new(object, false);
         instance.update = FindMethod(klass, "Update", 1);
         instance.onDestroy = FindMethod(klass, "OnDestroy", 0);
@@ -292,6 +308,7 @@ namespace eng
         {
             mono_gchandle_free(it->second.gcHandle);
         }
+        NativeHandleRegistry::GetInstance().Release(it->second.nativeHandle);
         m_Impl->instances.erase(it);
 #else
         (void)script;
