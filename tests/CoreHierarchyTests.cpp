@@ -3,6 +3,9 @@
 #include <core/Scene.h>
 #include <core/SceneSerializer.h>
 #include <scripting/NativeHandleRegistry.h>
+#include <physics/BoxCollider2D.h>
+#include <physics/Rigidbody2D.h>
+#include <physics/PhysicsWorld.h>
 
 #include <cmath>
 #include <filesystem>
@@ -147,6 +150,32 @@ int main()
 
     loaded.DestroyGameObject(loadedRoot);
     if (!Require(loaded.GetGameObjects().empty(), "destroying root should destroy descendants"))
+    {
+        return 1;
+    }
+
+    // Physics regression: a dynamic box should land on a static floor rather than
+    // being pushed through it when the AABB normal is resolved.
+    eng::Scene physicsScene("Physics Test");
+    eng::GameObject* floor = physicsScene.CreateGameObject("Floor");
+    floor->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
+    auto* floorCollider = floor->AddComponent<eng::BoxCollider2D>();
+    floorCollider->SetSize(100.0f, 10.0f);
+
+    eng::GameObject* body = physicsScene.CreateGameObject("Body");
+    body->GetTransform()->SetPosition(0.0f, 80.0f, 0.0f);
+    auto* rigidbody = body->AddComponent<eng::Rigidbody2D>();
+    rigidbody->SetMass(1.0f);
+    auto* bodyCollider = body->AddComponent<eng::BoxCollider2D>();
+    bodyCollider->SetSize(10.0f, 10.0f);
+    physicsScene.GetPhysicsWorld()->SetGravity(glm::vec2(0.0f, -100.0f));
+    for (int i = 0; i < 180; ++i)
+    {
+        physicsScene.Update(1.0f / 60.0f);
+    }
+    const float settledY = body->GetTransform()->GetPosition().y;
+    if (!Require(settledY > 5.0f && settledY < 20.0f,
+                 "dynamic box should settle above static floor"))
     {
         return 1;
     }
