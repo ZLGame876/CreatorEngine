@@ -3,9 +3,47 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <string>
+
+#ifdef __APPLE__
+    #include <mach-o/dyld.h>
+    #include <unistd.h>
+    #include <climits>
+#elif defined(_WIN32)
+    #include <windows.h>
+#endif
 
 namespace eng
 {
+
+    // 切换工作目录到可执行文件所在目录，确保相对路径（如着色器文件）可用
+    static void SetWorkingDirToExe()
+    {
+#ifdef __APPLE__
+        char exePath[PATH_MAX];
+        uint32_t size = sizeof(exePath);
+        if (_NSGetExecutablePath(exePath, &size) == 0)
+        {
+            std::string path(exePath);
+            size_t lastSlash = path.find_last_of('/');
+            if (lastSlash != std::string::npos)
+            {
+                chdir(path.substr(0, lastSlash).c_str());
+            }
+        }
+#elif defined(_WIN32)
+        char exePath[MAX_PATH];
+        if (GetModuleFileNameA(nullptr, exePath, MAX_PATH) > 0)
+        {
+            std::string path(exePath);
+            size_t lastSlash = path.find_last_of("\\/");
+            if (lastSlash != std::string::npos)
+            {
+                SetCurrentDirectoryA(path.substr(0, lastSlash).c_str());
+            }
+        }
+#endif
+    }
 
     void keyCallback(GLFWwindow* window, int key, int, int action, int)
     {
@@ -32,6 +70,9 @@ namespace eng
         {
             return false;
         }
+
+        // 切换工作目录到可执行文件所在目录
+        SetWorkingDirToExe();
 
         if(!glfwInit())
         {

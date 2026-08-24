@@ -1,6 +1,24 @@
 # Build outputs
+Bin/
 main
 main.dSYM/
+source/main
+source/main.dSYM/
 build/
 .cache/
-.vscode/run.command
+cmake-build-*/
+.idea/
+Assets/Scripts/bin/
+Assets/Scripts/obj/
+managed/**/bin/
+managed/**/obj/
+tests/**/bin/
+tests/**/obj/
+build_error.txt
+build_output.txt
+ThirdParty/imgui.zip
+imgui.ini
+*.obj
+*.pdb
+*.ilk
+*.exe
